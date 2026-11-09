@@ -44,26 +44,22 @@
 
 /* Шрифты — подмножествами в woff2: из полных файлов взяты только те символы,
    что встречаются в интерфейсе. Dela Gothic One весит 2,4 МБ целиком и 13 КБ
-   в подмножестве; Golos Text — 90 КБ против 15 КБ. TTF оставлены вторым
-   источником: если браузер не поймёт woff2, он возьмёт знакомый формат. */
+   в подмножестве; Golos Text — 90 КБ против 15 КБ. TTF не нужны: подмножества покрывают весь интерфейс. */
 
 @font-face {
   font-family: "Dela Gothic One";
-  src: url("assets/fonts/dela.woff2") format("woff2"),
-       url("assets/fonts/DelaGothicOne-Regular.ttf") format("truetype");
+  src: url("assets/fonts/dela.woff2") format("woff2");
   font-display: swap;
 }
 @font-face {
   font-family: "Golos Text";
-  src: url("assets/fonts/golos-400.woff2") format("woff2"),
-       url("assets/fonts/GolosText-Regular.ttf") format("truetype");
+  src: url("assets/fonts/golos-400.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
   font-family: "Golos Text";
-  src: url("assets/fonts/golos-700.woff2") format("woff2"),
-       url("assets/fonts/GolosText-Bold.ttf") format("truetype");
+  src: url("assets/fonts/golos-700.woff2") format("woff2");
   font-weight: 700;
   font-display: swap;
 }

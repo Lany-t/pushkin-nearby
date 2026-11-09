@@ -24,14 +24,10 @@ const SHELL_FILES = [
   "./icons/512.png",
   "./icons/apple-touch-icon.png",
   "./icons/favicon-32.png",
-  // Шрифты — подмножествами: браузер возьмёт woff2, а TTF лежит рядом
-  // на случай, если woff2 не поддержится. Кэшируем те и другие.
+  // Шрифты — подмножествами в woff2.
   "./assets/fonts/dela.woff2",
   "./assets/fonts/golos-400.woff2",
   "./assets/fonts/golos-700.woff2",
-  "./assets/fonts/DelaGothicOne-Regular.ttf",
-  "./assets/fonts/GolosText-Regular.ttf",
-  "./assets/fonts/GolosText-Bold.ttf",
 ];
 
 self.addEventListener("install", (e) => {
