@@ -1,0 +1,418 @@
+/* «Пушкин рядом» — оформление. Все значения живут в переменных на :root,
+   в разметке магических чисел нет. Палитра и шрифты взяты из презентации
+   проекта (build.js), поэтому приложение и слайды выглядят как одно целое. */
+
+:root {
+  --ink: #16142E;
+  --ink-80: rgba(22, 20, 46, .80);
+  --ink-56: rgba(22, 20, 46, .56);
+  --paper: #F5F4FA;
+  --card: #FFFFFF;
+  --coral: #FF5A4E;
+  --coral-soft: #FFE6E3;
+  --violet: #6D5DF5;
+  --violet-soft: #EDEBFF;
+  --lime: #C6F36B;
+  --muted: #6B6889;
+  --line: #E3E1EF;
+  --light: #C9C6E8;
+
+  --street: #D9D6F5;
+  --river: #C9D4F5;
+  --park: #C6F36B;
+
+  --display: "Dela Gothic One", system-ui, sans-serif;
+  --text: "Golos Text", system-ui, sans-serif;
+
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px;
+  --s5: 20px; --s6: 24px; --s7: 32px; --s8: 40px;
+
+  --gutter: 20px;
+  --tap: 44px;
+
+  --r-chip: 999px;
+  --r-card: 20px;
+  --r-sheet: 28px 28px 0 0;
+
+  --shadow: 0 4px 14px rgba(43, 38, 96, .08), 0 1px 2px rgba(43, 38, 96, .06);
+  --shadow-lift: 0 12px 32px rgba(43, 38, 96, .16);
+
+  --peek: 260px;              /* сколько нижнего листа видно в покое */
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+/* Шрифты — подмножествами в woff2: из полных файлов взяты только те символы,
+   что встречаются в интерфейсе. Dela Gothic One весит 2,4 МБ целиком и 13 КБ
+   в подмножестве; Golos Text — 90 КБ против 15 КБ. TTF оставлены вторым
+   источником: если браузер не поймёт woff2, он возьмёт знакомый формат. */
+
+@font-face {
+  font-family: "Dela Gothic One";
+  src: url("assets/fonts/dela.woff2") format("woff2"),
+       url("assets/fonts/DelaGothicOne-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Golos Text";
+  src: url("assets/fonts/golos-400.woff2") format("woff2"),
+       url("assets/fonts/GolosText-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Golos Text";
+  src: url("assets/fonts/golos-700.woff2") format("woff2"),
+       url("assets/fonts/GolosText-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 16px/1.5 var(--text);
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+
+/* ---------- карта ---------- */
+
+#stage {
+  position: fixed; inset: 0;
+  overflow: hidden;
+  touch-action: none;          /* иначе браузер скроллит страницу вместо карты */
+  background: var(--paper);
+}
+
+#camera {
+  position: absolute; inset: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+#camera svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* Точки живут поверх карты, но внутри камеры — чтобы держаться координат.
+   Их размер компенсируется обратным масштабом (см. app.js), поэтому при
+   приближении они не раздуваются. */
+.pin {
+  position: absolute;
+  width: 0; height: 0;
+  z-index: 2;
+}
+.pin__hit {
+  position: absolute;
+  left: -22px; top: -22px;
+  width: 44px; height: 44px;       /* зона касания по нормам доступности */
+  border-radius: 50%;
+}
+.pin__dot {
+  position: absolute;
+  left: -14px; top: -14px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 3px solid var(--card);
+  box-shadow: var(--shadow);
+  display: grid; place-items: center;
+  transform: scale(var(--k, 1));
+  transition: transform .26s cubic-bezier(.34, 1.56, .64, 1), background .2s;
+}
+.pin__num { font: 700 12px/1 var(--text); color: var(--card); }
+.pin--near .pin__dot { background: var(--coral); }
+.pin--done .pin__dot { background: var(--lime); }
+.pin--done .pin__num { color: var(--ink); }
+.pin--active .pin__dot { transform: scale(calc(var(--k, 1) * 1.35)); box-shadow: var(--shadow-lift); }
+
+.pin__pulse {
+  position: absolute;
+  left: -14px; top: -14px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--coral);
+  opacity: .35;
+  animation: pulse 2.4s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes pulse {
+  0% { transform: scale(var(--k, 1)); opacity: .38; }
+  70% { transform: scale(calc(var(--k, 1) * 2.4)); opacity: 0; }
+  100% { transform: scale(calc(var(--k, 1) * 2.4)); opacity: 0; }
+}
+
+#me {
+  position: absolute;
+  width: 16px; height: 16px; margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  background: var(--violet);
+  border: 3px solid var(--card);
+  box-shadow: 0 0 0 8px rgba(109, 93, 245, .16);
+  z-index: 3;
+}
+
+/* ---------- шапка ---------- */
+
+header {
+  position: fixed;
+  left: 0; right: 0; top: 0;
+  padding: calc(var(--safe-t) + 10px) var(--gutter) 10px;
+  display: flex; align-items: center; gap: var(--s3);
+  background: rgba(255, 255, 255, .92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  z-index: 10;
+}
+header h1 {
+  margin: 0;
+  font: 400 22px/1.1 var(--display);
+  letter-spacing: .01em;
+}
+header .sub { margin-top: 2px; font-size: 13px; color: var(--muted); }
+header .spacer { flex: 1; }
+
+.round {
+  width: var(--tap); height: var(--tap);
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  display: grid; place-items: center;
+  flex: none;
+}
+.round svg { width: 22px; height: 22px; }
+.round[hidden] { display: none; }
+
+/* ---------- нижний лист ---------- */
+
+#sheet {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: calc(100% - var(--safe-t) - 84px);
+  border-radius: var(--r-sheet);
+  background: var(--card);
+  box-shadow: 0 -8px 30px rgba(43, 38, 96, .12);
+  transform: translateY(calc(100% - var(--peek) - var(--safe-b)));
+  transition: transform .38s cubic-bezier(.22, 1, .36, 1);
+  z-index: 12;
+  display: flex; flex-direction: column;
+}
+#sheet.open { transform: translateY(0); }
+
+#grip {
+  height: 22px; display: grid; place-items: center;
+  flex: none; cursor: grab;
+}
+#grip::before {
+  content: ""; width: 36px; height: 4px;
+  border-radius: 2px; background: var(--line);
+}
+
+#sheetScroll {
+  overflow-y: auto;
+  padding: 0 var(--gutter) calc(var(--s7) + var(--safe-b));
+  -webkit-overflow-scrolling: touch;
+}
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--r-chip);
+  background: var(--violet-soft); color: var(--violet);
+  font: 700 11px/1 var(--text);
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.chip--done { background: var(--lime); color: var(--ink); }
+.chip--here { background: var(--coral-soft); color: var(--coral); }
+
+h2.place {
+  margin: var(--s3) 0 var(--s2);
+  font: 400 26px/1.15 var(--display);
+}
+
+.meta { font-size: 13px; color: var(--muted); }
+
+figure { margin: var(--s5) 0 0; }
+figure img {
+  width: 100%; border-radius: var(--r-card);
+  display: block; background: var(--paper);
+}
+figcaption { margin-top: 8px; font-size: 12px; color: var(--muted); }
+
+.quotebox {
+  margin: var(--s5) 0 0;
+  padding-left: var(--s4);
+  border-left: 4px solid var(--coral);
+  position: relative;
+}
+.quotebox::before {
+  content: "“";
+  position: absolute; left: -2px; top: -26px;
+  font: 400 56px/1 var(--display);
+  color: var(--coral); opacity: .18;
+}
+.quotebox p {
+  margin: 0;
+  font: 400 19px/1.55 var(--text);
+  white-space: pre-line;
+}
+.quotebox cite {
+  display: block; margin-top: var(--s2);
+  font: 700 12px/1.2 var(--text);
+  font-style: normal; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted);
+}
+
+.body p { margin: var(--s4) 0 0; }
+
+.cta {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; height: 52px;
+  margin-top: var(--s5);
+  border-radius: 14px;
+  background: var(--coral); color: #fff;
+  font: 700 16px/1 var(--text);
+  transition: transform .12s;
+}
+.cta:active { transform: scale(.985); }
+.cta--ghost { background: var(--violet); }
+.cta[disabled] { background: var(--line); color: var(--muted); }
+
+/* список мест внутри листа */
+.place-list { list-style: none; margin: var(--s5) 0 0; padding: 0; }
+.place-list li + li { margin-top: var(--s3); }
+.place-list button {
+  width: 100%;
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s3);
+  border-radius: var(--r-card);
+  background: var(--paper);
+  text-align: left;
+}
+.place-list .n {
+  width: 30px; height: 30px; flex: none;
+  border-radius: 50%;
+  background: var(--ink); color: #fff;
+  display: grid; place-items: center;
+  font: 700 13px/1 var(--text);
+}
+.place-list .n--done { background: var(--lime); color: var(--ink); }
+.place-list .nm { font-weight: 700; font-size: 16px; }
+.place-list .ad { font-size: 12px; color: var(--muted); }
+
+/* ---------- экран задания ---------- */
+
+#quiz {
+  position: fixed; inset: 0;
+  z-index: 30;
+  display: none;
+  flex-direction: column;
+  background: var(--ink);
+  color: #fff;
+  padding: calc(var(--safe-t) + 10px) var(--gutter) calc(var(--s6) + var(--safe-b));
+}
+#quiz.on { display: flex; }
+
+#quiz .top { display: flex; align-items: center; gap: var(--s3); }
+#quiz .top .crumb { font-size: 13px; color: var(--light); }
+#quiz .top .spacer { flex: 1; }
+#quiz .close { color: #fff; }
+
+#quiz .q {
+  margin: auto 0 0;
+  font: 400 24px/1.25 var(--display);
+  text-align: center;
+  padding: var(--s7) 0 var(--s5);
+}
+.opt {
+  display: flex; align-items: center; gap: var(--s3);
+  width: 100%; min-height: 64px;
+  padding: var(--s3) var(--s4);
+  margin-top: var(--s3);
+  border-radius: 16px;
+  background: #24214A; color: #fff;
+  font-size: 16px; text-align: left;
+  transition: transform .12s, background .2s;
+}
+.opt:active { transform: scale(.97); }
+.opt .l {
+  width: 28px; height: 28px; flex: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .12);
+  display: grid; place-items: center;
+  font: 700 13px/1 var(--text);
+}
+.opt.ok { background: var(--lime); color: var(--ink); }
+.opt.ok .l { background: rgba(22, 20, 46, .14); }
+.opt.no { background: var(--coral); }
+.opt[disabled] { pointer-events: none; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.opt.shake { animation: shake .3s; }
+
+.fact {
+  margin-top: var(--s4);
+  padding: var(--s3) var(--s4);
+  border-left: 3px solid var(--lime);
+  border-radius: 0 12px 12px 0;
+  background: #24214A;
+  font-size: 15px;
+  display: none;
+}
+.fact.on { display: block; }
+.fact b { color: var(--lime); }
+
+/* ---------- приветствие ---------- */
+
+#hello {
+  position: fixed; inset: 0;
+  z-index: 40;
+  display: grid; place-items: center;
+  padding: var(--gutter);
+  background: var(--ink);
+  color: #fff;
+  text-align: center;
+}
+#hello.off { display: none; }
+#hello .big { font: 400 34px/1.1 var(--display); }
+#hello .big em { color: var(--coral); font-style: normal; display: block; }
+#hello p { color: var(--light); font-size: 15px; max-width: 30ch; margin: var(--s4) auto var(--s6); }
+#hello input {
+  width: 100%; max-width: 320px;
+  height: 52px; padding: 0 var(--s4);
+  border-radius: 14px; border: 1px solid #3A3670;
+  background: #201E3C; color: #fff;
+  font: 400 16px/1 var(--text);
+}
+#hello input::placeholder { color: var(--muted); }
+
+/* ---------- утилиты ---------- */
+
+[hidden] { display: none !important; }
+
+.sr {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ---------- слои карты ---------- */
+/* Цвета слоёв живут здесь, а не в атрибутах SVG: так их видит и браузер,
+   и режим высокой контрастности, и их можно менять одной строкой. */
+
+#map { display: block; }
+.map-bg { fill: var(--paper); }
+.map-park { fill: var(--park); opacity: .5; }
+.map-grid line { stroke: var(--street); }
+.map-river { fill: none; stroke: var(--river); stroke-width: 22; stroke-linecap: round; stroke-linejoin: round; }
+.map-ring {
+  fill: none; stroke: var(--violet); stroke-opacity: .5;
+  stroke-width: 3; stroke-dasharray: 1 12; stroke-linecap: round;
+}

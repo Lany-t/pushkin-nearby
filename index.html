@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Пушкин рядом — литературная карта Москвы</title>
+<meta name="description" content="Девять мест Москвы, связанных с Александром Сергеевичем Пушкиным: карта, цитаты и задания.">
+<meta name="theme-color" content="#16142E">
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Пушкин рядом">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Карта. Камера — группа, которую двигают и приближают; точки лежат внутри
+     неё, чтобы держаться координат, но компенсируют масштаб и не раздуваются. -->
+<div id="stage" aria-label="Карта пушкинских мест Москвы">
+  <div id="camera"></div>
+  <div id="me" hidden></div>
+</div>
+
+<header>
+  <div>
+    <h1>Пушкин рядом</h1>
+    <div class="sub" id="sub">Москва</div>
+    <span class="sr" id="who"></span>
+  </div>
+  <span class="spacer"></span>
+  <button class="round" id="openList" type="button" aria-label="Список мест">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M4 6h16M4 12h16M4 18h10"/>
+    </svg>
+  </button>
+  <button class="round" id="recenter" type="button" aria-label="Показать всю карту">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="12" cy="12" r="3.2"/>
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>
+    </svg>
+  </button>
+</header>
+
+<!-- Нижний лист: сначала список мест, при выборе точки — карточка места. -->
+<section id="sheet" aria-live="polite">
+  <div id="grip" role="button" tabindex="0" aria-label="Развернуть или свернуть панель"></div>
+  <div id="sheetScroll"></div>
+</section>
+
+<!-- Задание. Единственный тёмный экран: контраст с бумажной картой. -->
+<section id="quiz" role="dialog" aria-modal="true" aria-label="Задание">
+  <div class="top">
+    <span class="crumb"></span>
+    <span class="spacer"></span>
+    <button class="round close" type="button" aria-label="Закрыть задание">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+    </button>
+  </div>
+  <h2 class="q"></h2>
+  <div class="opts"></div>
+  <div class="fact"></div>
+  <button class="cta cta--ghost next" type="button" hidden>Дальше</button>
+</section>
+
+<!-- Первый запуск: имя. Никакого пароля и сервера — профиль живёт на устройстве. -->
+<div id="hello">
+  <div>
+    <div class="big">Пушкин<em>рядом</em></div>
+    <p>Девять мест Москвы, где жил, венчался и гулял Александр Сергеевич — восемь на карте и одно за городом. Карта, цитаты и задания — и всё работает без интернета.</p>
+    <form id="helloForm">
+      <label class="sr" for="nameInput">Как вас зовут</label>
+      <input id="nameInput" type="text" placeholder="Как вас зовут?" autocomplete="given-name" maxlength="24" enterkeyhint="done">
+      <button class="cta" type="submit" style="max-width:320px;margin:12px auto 0">Начать прогулку</button>
+    </form>
+    <p class="meta" style="color:#6B6889;margin-top:16px">Имя и прогресс остаются на этом устройстве</p>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+<script>
+  // Тихая регистрация service worker: после первой загрузки приложение
+  // открывается без сети.
+  if ("serviceWorker" in navigator) {
+    addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+</script>
+</body>
+</html>

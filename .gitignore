@@ -1,0 +1,10 @@
+# служебное
+.tmp/
+*.log
+.DS_Store
+Thumbs.db
+
+# окружения и зависимости
+node_modules/
+.venv/
+dist/
